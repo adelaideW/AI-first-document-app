@@ -474,12 +474,7 @@ export const CommandCenter = ({
         )}
       </AnimatePresence>
 
-      {/* Top Navigation */}
-      <header className="absolute top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-20">
-        <div className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-colors group">
-          <ChevronDown className="w-4 h-4 text-slate-400" />
-        </div>
-      </header>
+      <header className="absolute top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-20" />
 
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         <div className={cn(
