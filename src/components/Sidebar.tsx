@@ -3,20 +3,15 @@ import {
   Plus, 
   History, 
   Folder, 
-  Users, 
-  Settings,
   Zap,
-  ChevronRight,
-  Upload,
-  MessageSquare,
   Search,
   MoreHorizontal,
   PanelLeftClose,
-  Share,
   Pencil,
   Pin,
-  Archive,
-  Trash2
+  Trash2,
+  Check,
+  X
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import React, { useState, useRef, useEffect } from 'react';
@@ -31,6 +26,9 @@ interface SidebarProps {
   onOpenBulkUpload: () => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
+  onDeleteChat: (id: string) => void;
+  onPinChat: (id: string) => void;
+  onRenameChat: (id: string, newLabel: string) => void;
 }
 
 export const Sidebar = ({ 
@@ -42,11 +40,17 @@ export const Sidebar = ({
   onNewTask, 
   onOpenBulkUpload,
   isSidebarOpen,
-  setIsSidebarOpen
+  setIsSidebarOpen,
+  onDeleteChat,
+  onPinChat,
+  onRenameChat
 }: SidebarProps) => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -57,6 +61,40 @@ export const Sidebar = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingId]);
+
+  const handleRenameStart = (id: string, currentLabel: string) => {
+    setRenamingId(id);
+    setRenameValue(currentLabel);
+    setOpenMenuId(null);
+  };
+
+  const handleRenameConfirm = () => {
+    if (renamingId && renameValue.trim()) {
+      onRenameChat(renamingId, renameValue.trim());
+    }
+    setRenamingId(null);
+    setRenameValue('');
+  };
+
+  const handleRenameCancel = () => {
+    setRenamingId(null);
+    setRenameValue('');
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleRenameConfirm();
+    } else if (e.key === 'Escape') {
+      handleRenameCancel();
+    }
+  };
 
   const handleMenuToggle = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -80,6 +118,80 @@ export const Sidebar = ({
     setActiveTaskId(id);
     setActiveTask('chat');
   };
+
+  const pinnedItems = history.filter((item: any) => item.pinned);
+  const unpinnedItems = history.filter((item: any) => !item.pinned);
+
+  const renderHistoryItem = (item: any) => (
+    <div key={item.id} className="relative group">
+      {renamingId === item.id ? (
+        <div className="flex items-center gap-1 px-2 py-1">
+          <input
+            ref={renameInputRef}
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={handleRenameKeyDown}
+            onBlur={handleRenameConfirm}
+            className="flex-1 text-sm px-2 py-1 rounded-md border border-primary/40 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+      ) : (
+        <>
+          <button
+            onClick={() => handleHistoryClick(item.id)}
+            className={cn(
+              "w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2",
+              activeTaskId === item.id && activeTask === 'chat' ? "bg-slate-100" : "hover:bg-slate-100"
+            )}
+          >
+            {item.pinned && <Pin className="w-3 h-3 text-slate-400 flex-shrink-0" />}
+            <span className="truncate flex-1">{item.label}</span>
+          </button>
+          <button 
+            onClick={(e) => handleMenuToggle(e, item.id)}
+            className={cn(
+              "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-slate-200 transition-all z-10",
+              openMenuId === item.id ? "opacity-100 bg-slate-200" : "opacity-0 group-hover:opacity-100"
+            )}
+          >
+            <MoreHorizontal className="w-4 h-4 text-slate-400" />
+          </button>
+
+          {openMenuId === item.id && (
+            <div 
+              ref={menuRef}
+              style={{ top: menuPosition.top, left: menuPosition.left }}
+              className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[9999] animate-in fade-in zoom-in duration-200"
+            >
+              <button 
+                onClick={() => handleRenameStart(item.id, item.label)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <Pencil className="w-4 h-4" />
+                Rename
+              </button>
+              <div className="h-px bg-slate-100 my-1 mx-2" />
+              <button 
+                onClick={() => { onPinChat(item.id); setOpenMenuId(null); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <Pin className="w-4 h-4" />
+                {item.pinned ? 'Unpin chat' : 'Pin chat'}
+              </button>
+              <button 
+                onClick={() => { onDeleteChat(item.id); setOpenMenuId(null); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="w-[260px] h-screen bg-white flex flex-col text-[#1A1A1A] p-3 border-r border-slate-100">
@@ -114,61 +226,21 @@ export const Sidebar = ({
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6 mt-2">
+        {pinnedItems.length > 0 && (
+          <section>
+            <h3 className="text-[11px] font-semibold text-slate-400 px-3 mb-2 flex items-center gap-1">
+              <Pin className="w-3 h-3" /> Pinned
+            </h3>
+            <div className="space-y-0.5">
+              {pinnedItems.map((item) => renderHistoryItem(item))}
+            </div>
+          </section>
+        )}
+
         <section>
           <h3 className="text-[11px] font-semibold text-slate-400 px-3 mb-2">Today</h3>
           <div className="space-y-0.5">
-            {history.map((item) => (
-              <div key={item.id} className="relative group">
-                <button
-                  onClick={() => handleHistoryClick(item.id)}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-3",
-                    activeTaskId === item.id && activeTask === 'chat' ? "bg-slate-100" : "hover:bg-slate-100"
-                  )}
-                >
-                  <span className="truncate flex-1">{item.label}</span>
-                </button>
-                <button 
-                  onClick={(e) => handleMenuToggle(e, item.id)}
-                  className={cn(
-                    "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-slate-200 transition-all z-10",
-                    openMenuId === item.id ? "opacity-100 bg-slate-200" : "opacity-0 group-hover:opacity-100"
-                  )}
-                >
-                  <MoreHorizontal className="w-4 h-4 text-slate-400" />
-                </button>
-
-                {openMenuId === item.id && (
-                  <div 
-                    ref={menuRef}
-                    style={{ top: menuPosition.top, left: menuPosition.left }}
-                    className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[9999] animate-in fade-in zoom-in duration-200"
-                  >
-                    <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Share className="w-4 h-4" />
-                      Share
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Pencil className="w-4 h-4" />
-                      Rename
-                    </button>
-                    <div className="h-px bg-slate-100 my-1 mx-2" />
-                    <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Pin className="w-4 h-4" />
-                      Pin chat
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Archive className="w-4 h-4" />
-                      Archive
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+            {unpinnedItems.map((item) => renderHistoryItem(item))}
           </div>
         </section>
 

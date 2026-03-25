@@ -111,10 +111,41 @@ export default function App() {
     setHistory(prev => prev.map(item => 
       item.id === id ? { ...item, label: newLabel } : item
     ));
-    // If we update the label, it's no longer a "fresh" new task
     if (id === latestNewTaskId) {
       setLatestNewTaskId('');
     }
+  };
+
+  const handleDeleteChat = (id: string) => {
+    setHistory(prev => prev.filter(item => item.id !== id));
+    if (activeTaskId === id) {
+      setActiveTask('chat');
+      const remaining = history.filter(item => item.id !== id);
+      if (remaining.length > 0) {
+        setActiveTaskId(remaining[0].id);
+      }
+    }
+  };
+
+  const handlePinChat = (id: string) => {
+    setHistory(prev => {
+      const item = prev.find(h => h.id === id);
+      if (!item) return prev;
+      const pinned = { ...item, pinned: !item.pinned };
+      const rest = prev.filter(h => h.id !== id);
+      if (pinned.pinned) {
+        const pinnedItems = rest.filter((h: any) => h.pinned);
+        const unpinnedItems = rest.filter((h: any) => !h.pinned);
+        return [...pinnedItems, pinned, ...unpinnedItems];
+      }
+      return [pinned, ...rest];
+    });
+  };
+
+  const handleRenameChat = (id: string, newLabel: string) => {
+    setHistory(prev => prev.map(item =>
+      item.id === id ? { ...item, label: newLabel } : item
+    ));
   };
 
   const renderContent = () => {
@@ -177,6 +208,9 @@ export default function App() {
               onOpenBulkUpload={() => setIsBulkUploadOpen(true)}
               isSidebarOpen={isSidebarOpen}
               setIsSidebarOpen={setIsSidebarOpen}
+              onDeleteChat={handleDeleteChat}
+              onPinChat={handlePinChat}
+              onRenameChat={handleRenameChat}
             />
           </motion.div>
         )}
