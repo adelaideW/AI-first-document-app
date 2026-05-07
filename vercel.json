@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd Access-shart-granting && npm ci",
+  "buildCommand": "cd Access-shart-granting && npm run build",
+  "outputDirectory": "Access-shart-granting/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
