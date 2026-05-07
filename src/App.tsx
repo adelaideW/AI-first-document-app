@@ -12,6 +12,7 @@ import { SideEditor } from './components/SideEditor';
 import { motion, AnimatePresence } from 'motion/react';
 import { PanelLeftOpen } from 'lucide-react';
 import { Template } from './types';
+import { PortfolioReturnLink } from './components/PortfolioReturnLink';
 
 const initialTemplates: Template[] = [
   { 
@@ -249,6 +250,7 @@ export default function App() {
 
       <TemplateEditorModal isOpen={isEditorOpen} onClose={() => setIsEditorOpen(false)} />
       <BulkUploadModal isOpen={isBulkUploadOpen} onClose={() => setIsBulkUploadOpen(false)} />
+      <PortfolioReturnLink />
     </div>
   );
 }
